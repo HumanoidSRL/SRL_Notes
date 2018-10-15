@@ -52,5 +52,11 @@ about github: use fork to copy others' work   use pull request to let him see an
 
 以及开始看机器人运动学的PDF，坐标变换部分和现在理论力学部分讲的差不多。  
 ### 周虹宇
+
+第四周采购了两个震动马达，并用单片机进行了驱动。
+
+**继续学习单片机中断，准备用中断驱动pwm波
+
+**制作应变片电路，用ADC模块传递接触信息
 ### 李博&王斌
 ## 组会报告（郝鸣）
