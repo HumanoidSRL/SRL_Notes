@@ -30,14 +30,18 @@ private:
 
     double translatorx,translatorz;
     double xRot,yRot,zRot;
+
     double upThetas[6];
     double downThetas[4];
     double elongLeftLeg,elongRightLeg;
+
     double lengthBody,widthBody,depthBody;
     double heightShoulder,radiusShoulder,radiusJoint,heightJoint;
-    double lengthArm,widthArm,thickArm;
+    double lengthArm,widthArm,thickArm;//从身体侧面看  侧面有长宽  向身子轴线上有厚度
     double lengthForearm,widthFoream,thickForearm;
-
+    double lengthPelvis,widthPelvis,depthPelvis;//这里的长宽和身子的恰好相反
+    double lengthThigh,widthThigh,thickThigh;//与手臂定义同
+    double widthShank,thickShank;
 };
 #endif // MYOPENGLWIDGET_H
 ```
@@ -101,6 +105,17 @@ MyOpenGLWidget::MyOpenGLWidget(QWidget *paren)
     lengthForearm=5.5;
     widthFoream=heightJoint;
     thickForearm=0.5;
+
+    lengthPelvis=4;
+    widthPelvis=2;
+    depthPelvis=3;
+
+    lengthThigh=6;
+    widthThigh=2;
+    thickThigh=2;
+
+    thickShank=1.5;
+    widthShank=1.5;
 }
 
 void MyOpenGLWidget::initializeGL()
@@ -127,7 +142,7 @@ void MyOpenGLWidget::initializeGL()
 
 void MyOpenGLWidget::resizeGL(int w, int h)
 {
-    glViewport(0, 0, (GLint)w, (GLint)h);//glViewport是OpenGL中的一个函数。计算机图形学中，在屏幕上打开窗口的任务是由窗口系统，而不是OpenGL负责的。glViewport在默认情况下，视口被设置为占据打开窗口的整个像素矩形，窗口大小和设置视口大小相同，所以为了选择一个更小的绘图区域，就可以用glViewport函数来实现这一变换，在窗口中定义一个像素矩形，最终将图像映射到这个矩形中。例如可以对窗口区域进行划分，在同一个窗口中显示分割屏幕的效果，以显示多个视图/glViewport(GLint x,GLint y,GLsizei width,GLsizei height)为其函数原型。X，Y————以像素为单位，指定了视口的左下角（在第一象限内，以（0，0）为原点的）位置。width，height————表示这个视口矩形的宽度和高度，根据窗口的实时变化重绘窗口。
+    glViewport(0, 0, (GLint)w, (GLint)h);  //glViewport是OpenGL中的一个函数。计算机图形学中，在屏幕上打开窗口的任务是由窗口系统，而不是OpenGL负责的。glViewport在默认情况下，视口被设置为占据打开窗口的整个像素矩形，窗口大小和设置视口大小相同，所以为了选择一个更小的绘图区域，就可以用glViewport函数来实现这一变换，在窗口中定义一个像素矩形，最终将图像映射到这个矩形中。例如可以对窗口区域进行划分，在同一个窗口中显示分割屏幕的效果，以显示多个视图/glViewport(GLint x,GLint y,GLsizei width,GLsizei height)为其函数原型。X，Y————以像素为单位，指定了视口的左下角（在第一象限内，以（0，0）为原点的）位置。width，height————表示这个视口矩形的宽度和高度，根据窗口的实时变化重绘窗口。
     glMatrixMode(GL_PROJECTION);//对接下来一步要做什么进行声明 ：对什么矩阵进行修改  ；例如这里是改变投影
     glLoadIdentity();        //将投影阵改为单位阵
     gluPerspective(60.0, (GLfloat)w/(GLfloat)h, 0.1, 100.0);//设定能看到什么范围的物体；第一个参数表示眼睛睁开的幅度，并且睁开越大感觉物体越远，越小感觉物体越近；第二个参数表示裁剪面的宽长比；可以想见根据距离和睁开幅度可以获得高度，加上宽长比，就都在了；后两个分别表示近剪裁面和远剪裁面到观察点的距离；
@@ -242,12 +257,82 @@ void MyOpenGLWidget::paintRightMachineArm()
 
 void MyOpenGLWidget::paintLeftMachineLeg()
 {
+    glLoadIdentity();                                                       //将模型视图矩阵归到原点去（不然太麻烦了）
+    gluLookAt(0,0,50,GLfloat(2)/3,GLfloat(2)/3,GLfloat(1)/3,0,1,0);         //同样需要设置观看角度，不然糊里糊涂；
 
+    glTranslated(0,0,translatorz);
+    glRotatef(yRot,0,1,0);
+    glRotatef(xRot,1,0,0);
+    glRotatef(zRot,0,0,1);
+
+    glTranslated(0,-lengthBody/2-widthPelvis/2,0);                          //向下移动到盆骨的中间
+    double flex2[3];
+    flex2[0]=lengthPelvis/widthPelvis;
+    flex2[1]=1;
+    flex2[2]=depthPelvis/widthPelvis;
+    glScalef(flex2[0],flex2[1],flex2[2]);
+    glutSolidCube(widthPelvis);
+    glScalef(1/flex2[0],1/flex2[1],1/flex2[2]);
+
+    glTranslated(-lengthPelvis/2-widthThigh/2,0,0);                   //原点移动到大腿的轴线
+    glRotatef(-90,0,1,0);
+    glRotatef(downThetas[0],0,0,1);                       //贴着身子旋转theta1角度，向上为正,原始形态为垂直向下
+    glRotatef(-downThetas[1],1,0,0);                       //向外展开一个角度，以向外展开的角度为正，即给如theta2为正，则向外转出
+    glTranslated(0,-lengthThigh/2,0);                 //将原点移动到将要绘制的长方体中心
+    flex2[0]=widthThigh/thickThigh;
+    flex2[1]=lengthThigh/thickThigh;
+    flex2[2]=1;                                      //初始化之后只能单独赋值
+    glScalef(flex2[0],flex2[1],flex2[2]);
+    glutSolidCube(thickThigh);
+    glScalef(1/flex2[0],1/flex2[1],1/flex2[2]);         //绘制大腿
+
+    glTranslated(0,-lengthThigh/2-elongLeftLeg/2,0);//原点移到伸长部分中心
+    flex2[0]=widthShank/thickShank;
+    flex2[1]=elongLeftLeg/thickShank;
+    flex2[2]=1;
+    glScalef(flex2[0],flex2[1],flex2[2]);
+    glutSolidCube(thickShank);
+    glScalef(1/flex2[0],1/flex2[1],1/flex2[2]);    //绘制可伸长小腿
 }
 
 void MyOpenGLWidget::paintRightMachineLeg()
 {
+    glLoadIdentity();                                                       //将模型视图矩阵归到原点去（不然太麻烦了）
+    gluLookAt(0,0,50,GLfloat(2)/3,GLfloat(2)/3,GLfloat(1)/3,0,1,0);         //同样需要设置观看角度，不然糊里糊涂；
 
+    glTranslated(0,0,translatorz);
+    glRotatef(yRot,0,1,0);
+    glRotatef(xRot,1,0,0);
+    glRotatef(zRot,0,0,1);
+
+    glTranslated(0,-lengthBody/2-widthPelvis/2,0);                          //向下移动到盆骨的中间
+    double flex3[3];
+    flex3[0]=lengthPelvis/widthPelvis;
+    flex3[1]=1;
+    flex3[2]=depthPelvis/widthPelvis;
+    glScalef(flex3[0],flex3[1],flex3[2]);
+    glutSolidCube(widthPelvis);
+    glScalef(1/flex3[0],1/flex3[1],1/flex3[2]);
+
+    glTranslated(lengthPelvis/2+widthThigh/2,0,0);                   //原点移动到大腿的轴线
+    glRotatef(90,0,1,0);
+    glRotatef(-downThetas[2],0,0,1);                       //贴着身子旋转downtheta[0]角度，向上为正,原始形态为垂直向下
+    glRotatef(-downThetas[3],1,0,0);                       //向外展开一个角度，以向外展开的角度为正，即给如theta2为正，则向外转出
+    glTranslated(0,-lengthThigh/2,0);                 //将原点移动到将要绘制的长方体中心
+    flex3[0]=widthThigh/thickThigh;
+    flex3[1]=lengthThigh/thickThigh;
+    flex3[2]=1;                                      //初始化之后只能单独赋值
+    glScalef(flex3[0],flex3[1],flex3[2]);
+    glutSolidCube(thickThigh);
+    glScalef(1/flex3[0],1/flex3[1],1/flex3[2]);         //绘制大腿
+
+    glTranslated(0,-lengthThigh/2-elongRightLeg/2,0);//原点移到伸长部分中心
+    flex3[0]=widthShank/thickShank;
+    flex3[1]=elongRightLeg/thickShank;
+    flex3[2]=1;
+    glScalef(flex3[0],flex3[1],flex3[2]);
+    glutSolidCube(thickShank);
+    glScalef(1/flex3[0],1/flex3[1],1/flex3[2]);    //绘制可伸长小腿
 }
 
 void MyOpenGLWidget::paintShoulder()
@@ -286,6 +371,30 @@ void MyOpenGLWidget::keyPressEvent(QKeyEvent *event)
         break;
     case Qt::Key_D:
         upThetas[5]+=10;
+        break;
+    case Qt::Key_I:
+        downThetas[0]+=10;
+        break;
+    case Qt::Key_J:
+        downThetas[1]+=10;
+        break;
+    case Qt::Key_K:
+        downThetas[2]+=10;
+        break;
+    case Qt::Key_L:
+        downThetas[3]+=10;
+        break;
+    case Qt::Key_M:
+        elongRightLeg+=0.1;
+        break;
+    case Qt::Key_N:
+        elongRightLeg-=0.1;
+        break;
+    case Qt::Key_Z:
+        elongLeftLeg+=0.1;
+        break;
+    case Qt::Key_X:
+        elongLeftLeg-=0.1;
         break;
     case Qt::Key_1:
         translatorz +=1;
